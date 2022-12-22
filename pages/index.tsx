@@ -19,8 +19,9 @@ export default function Home() {
         .from("keys")
         .select("*")
         .then((res: any) => {
-          const _ns = [...new Set(res.body.map((r: any) => r.namespace))];
-          const _keys = res.body.map((r: any) => ({
+          console.log(res);
+          const _ns = [...new Set(res.data.map((r: any) => r.namespace))];
+          const _keys = res.data.map((r: any) => ({
             key: r.key,
             ns: r.namespace,
             translations: r.translations,
