@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import styles from "../styles/Home.module.css";
+import supabase from "../utils/supabase";
 
 const getKeys = async (e) => {
   const keys = await supabase.from("keys").select("*");
