@@ -31,7 +31,7 @@ interface Store {
     setEntries: (allEntries: Entry[]) => void;
     create: () => void;
     delete: (id: string) => void;
-    update: (id: string, update: any) => void;
+    update: (update: any) => void;
   };
   namespaces: {
     allNamespaces: Namespace[];
@@ -81,8 +81,6 @@ export const useStore = create<Store>((set, get) => ({
       namespaces.setNamespaces(_namespaces.data);
       namespaces.select(activeNs ?? undefined);
       entries.select(activeEntry ?? undefined);
-
-      console.log(entries);
     }
   },
 
@@ -95,8 +93,9 @@ export const useStore = create<Store>((set, get) => ({
   entries: {
     allEntries: [],
     currentEntry: undefined,
-    select: (currentEntry) =>
-      set({ entries: { ...get().entries, currentEntry } }),
+    select: (currentEntry) => {
+      set({ entries: { ...get().entries, currentEntry } });
+    },
     setEntries: (allEntries) =>
       set({ entries: { ...get().entries, allEntries } }),
     create: () => {
@@ -119,7 +118,6 @@ export const useStore = create<Store>((set, get) => ({
             entries: {
               ...entries,
               allEntries: [...entries.allEntries, res.data?.[0]],
-              currentEntry: res.data?.[0],
             },
           });
         });
@@ -133,7 +131,6 @@ export const useStore = create<Store>((set, get) => ({
         .eq("id", id)
         .then(() => {
           const newList = entries.allEntries.filter((e) => e.id !== id);
-
           set({
             entries: {
               ...entries,
@@ -143,20 +140,20 @@ export const useStore = create<Store>((set, get) => ({
           });
         });
     },
-    update: (id: string, update: any) => {
+    update: (update: any) => {
       const { entries } = get();
       set({ isSaving: true });
       supabase
         .from("entries")
         .update(update)
-        .eq("id", id)
+        .eq("id", entries.currentEntry?.id as string)
         .select("*")
         .then((res) => {
           set({
             entries: {
               ...entries,
               allEntries: entries.allEntries.map((e) =>
-                e.id === id ? res.data?.[0] : e
+                e.id === entries.currentEntry?.id ? res.data?.[0] : e
               ),
             },
           });
@@ -200,39 +197,35 @@ export const useStore = create<Store>((set, get) => ({
             namespaces: {
               ...namespaces,
               allNamespaces: [...namespaces.allNamespaces, res.data?.[0]],
-              currentNamespace: res.data?.[0],
             },
           });
         });
     },
-    delete: (id: string) => {
+
+    delete: async (id: string) => {
+      console.log(id);
       const { namespaces } = get();
 
-      supabase
-        .from("namespaces")
+      await supabase
+        .from("entries")
         .delete()
-        .eq("id", id)
-        .then(() => {
-          // remove from current entries
-          set({
-            namespaces: {
-              ...namespaces,
-              allNamespaces: namespaces.allNamespaces.filter(
-                (ns) => ns.id !== id
-              ),
-            },
-          });
+        .eq("namespace_id", id)
+        .then(
+          (r) => console.log(r),
+          (e) => console.log(e)
+        );
 
-          // reset the current entry
-          if (namespaces.currentNamespace?.id === id) {
-            set({
-              namespaces: {
-                ...namespaces,
-                currentNamespace: namespaces.allNamespaces?.[0] ?? undefined,
-              },
-            });
-          }
-        });
+      await supabase.from("namespaces").delete().eq("id", id);
+
+      const newList = namespaces.allNamespaces.filter((ns) => ns.id !== id);
+
+      set({
+        namespaces: {
+          ...namespaces,
+          allNamespaces: newList,
+          currentNamespace: newList.at(-1),
+        },
+      });
     },
     update: (id: string, update: any) => {
       const { namespaces } = get();

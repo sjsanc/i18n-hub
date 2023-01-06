@@ -8,11 +8,11 @@ import {
 import { debounce } from "lodash";
 import { useCallback, useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Namespace, Translation, useStore } from "../stores/useAppStore";
+import { Translation, useStore } from "../stores/useAppStore";
 
 interface FormType {
   key: string;
-  namespace: Namespace;
+  namespace: string;
   context: string;
   translations: Translation[];
 }
@@ -38,7 +38,7 @@ export default function TranslationView() {
   useEffect(() => {
     form.reset({
       key: entries.currentEntry?.key,
-      namespace: namespaces.currentNamespace,
+      namespace: namespaces.currentNamespace?.id as string,
       context: entries.currentEntry?.context,
       translations: entries.currentEntry?.translations,
     });
@@ -49,10 +49,12 @@ export default function TranslationView() {
   useEffect(() => {
     const sub = form.watch((value, { name, type }) => {
       if (type === "change") {
-        debouncedSave(entries.currentEntry?.id as string, {
-          context: value.context,
+        console.log(entries.currentEntry);
+
+        debouncedSave({
           key: value.key,
-          namespace_id: value.namespace?.id,
+          context: value.context,
+          namespace_id: value.namespace,
           translations: value.translations,
         });
       }

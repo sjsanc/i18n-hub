@@ -22,6 +22,7 @@ import { Plus, Tournament } from "tabler-icons-react";
 import Sidebar from "../components/Sidebar";
 import TranslationView from "../components/TranslationView";
 import { useStore } from "../stores/useAppStore";
+import { exportJson } from "../utils/export";
 
 export default function Home() {
   const session = useSession();
@@ -29,6 +30,7 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState<boolean>(false);
   const [loaded, setLoaded] = useState<boolean>(false);
   const init = useStore((state) => state.init);
+  const { currentEntry } = useStore((state) => state.entries);
 
   useEffect(() => {
     if (!session) {
@@ -37,10 +39,7 @@ export default function Home() {
       setShowAuth(false);
       setLoaded(true);
       init();
-      console.log("INIT");
     }
-
-    console.log(session, loaded, showAuth);
   }, [session]);
 
   if (!loaded && !showAuth) {
@@ -85,7 +84,7 @@ export default function Home() {
 
               <section className="flex flex-col h-full grow gap-3 bg-slate-50 z-10">
                 <NamespaceControlBar />
-                <TranslationView />
+                {currentEntry && <TranslationView />}
               </section>
             </div>
             <Footer />
@@ -103,7 +102,6 @@ function SettingsModal() {
   const modal = useStore((state) => state.modal);
 
   useEffect(() => {
-    console.log(modal.key);
     if (modal.key === "settings") onOpen();
     else reset();
   }, [modal.key]);
@@ -235,6 +233,8 @@ const NamespaceControlBar = () => {
 
 const Footer = () => {
   const session = useSession();
+  const namespaces = useStore((state) => state.namespaces);
+  const entries = useStore((state) => state.entries);
   const isSaving = useStore((state) => state.isSaving);
 
   return (
@@ -249,7 +249,12 @@ const Footer = () => {
         <button className="bg-rose-500 text-white rounded px-3 py-2 text-sm font-bold focus:outline focus:outline-rose-200 hover:bg-rose-500/80 focus:bg-rose-500/70">
           Export Excel
         </button>
-        <button className="bg-rose-500 text-white rounded px-3 py-2 text-sm font-bold focus:outline focus:outline-rose-200 hover:bg-rose-500/80 focus:bg-rose-500/70">
+        <button
+          className="bg-rose-500 text-white rounded px-3 py-2 text-sm font-bold focus:outline focus:outline-rose-200 hover:bg-rose-500/80 focus:bg-rose-500/70"
+          onClick={() =>
+            exportJson(entries.allEntries, namespaces.allNamespaces)
+          }
+        >
           Export JSON
         </button>
       </div>
