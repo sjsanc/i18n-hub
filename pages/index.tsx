@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { Auth, ThemeSupa } from "@supabase/auth-ui-react";
-import { Head } from "next/document";
+import Head from "next/head";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Tournament } from "tabler-icons-react";
 import Sidebar from "../components/Sidebar";
