@@ -53,7 +53,7 @@ export default function TranslationView() {
           context: value.context,
           key: value.key,
           namespace_id: value.namespace?.id,
-          translations: JSON.stringify(value.translations),
+          translations: value.translations,
         });
       }
     });
