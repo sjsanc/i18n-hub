@@ -64,7 +64,7 @@ export default function TranslationView() {
 
   return entries.currentEntry ? (
     <>
-      <div className="bg-white p-4 border border-slate-200 flex flex-col gap-2 rounded m-3 z-30 ">
+      <div className="bg-white p-4 border border-slate-200 flex flex-col gap-2 rounded mx-3 z-30 ">
         <div className="grid grid-cols-2 gap-2">
           <FormControl>
             <FormLabel>Key</FormLabel>
