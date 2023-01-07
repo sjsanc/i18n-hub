@@ -127,7 +127,7 @@ function SettingsModal() {
       fileReader.readAsText(e.target.files[0], "UTF-8");
       fileReader.onload = (e) => {
         try {
-          const json = JSON.parse(e?.target.result);
+          const json = JSON.parse(e?.target?.result as string);
           // setLang(json[".LANG"]);
           setFile(json);
         } catch (e) {
@@ -185,7 +185,7 @@ function SettingsModal() {
             const nsId = _namespaces?.data?.find((n) => n.name === k)?.id;
 
             if (nsId) {
-              return Object.entries(v).flatMap((e) => ({
+              return Object.entries(v as any).flatMap((e) => ({
                 key: e[0],
                 translations: [{ lang, val: e[1] }],
                 namespace_id: nsId,
@@ -196,21 +196,23 @@ function SettingsModal() {
         )
         .select("*");
 
-      entries.setEntries(_entries.data);
-      namespaces.setNamespaces(_namespaces.data);
+      if (_entries?.data && _namespaces?.data) {
+        entries.setEntries(_entries.data);
+        namespaces.setNamespaces(_namespaces.data);
 
-      const activeNs = _namespaces.data?.[0];
-      const activeEntry = _entries.data?.find(
-        (e) => e.namespace_id === activeNs?.id
-      );
+        const activeNs = _namespaces.data?.[0];
+        const activeEntry = _entries.data?.find(
+          (e) => e.namespace_id === activeNs?.id
+        );
 
-      namespaces.select(activeNs ?? undefined);
-      entries.select(activeEntry ?? undefined);
+        namespaces.select(activeNs ?? undefined);
+        entries.select(activeEntry ?? undefined);
+      }
     }
 
     if (type === "merge") {
-      const newTranslations = Object.entries(file).flatMap(([k, v]) => {
-        return Object.entries(v).flatMap((e) => ({
+      const newTranslations = Object.entries(file).flatMap(([_, v]) => {
+        return Object.entries(v as any).flatMap((e) => ({
           key: e[0],
           translations: { lang, val: e[1] },
         }));
@@ -218,7 +220,7 @@ function SettingsModal() {
 
       const existingEntries = await supabase.from("entries").select("*");
 
-      const entriesToUpsert = existingEntries.data.map((e) => ({
+      const entriesToUpsert = existingEntries?.data?.map((e) => ({
         ...e,
         translations: [
           ...e.translations,

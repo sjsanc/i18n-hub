@@ -1,7 +1,11 @@
+import { NextApiRequest, NextApiResponse } from "next";
 import { exportJson } from "../../utils/export";
 import supabase from "../../utils/supabase";
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const entries = await supabase
     .from("entries")
     .select("*")
@@ -12,5 +16,5 @@ export default async function handler(req, res) {
     .select("*")
     .eq("project_id", "2c28b91f-42af-4fc7-8d3a-57774c0ab3be");
 
-  res.status(200).json(exportJson(entries?.data, namespaces?.data));
+  res.status(200).json(exportJson(entries?.data!, namespaces?.data!));
 }

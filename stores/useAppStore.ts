@@ -57,9 +57,7 @@ interface Store {
 
 export const useStore = create<Store>((set, get) => ({
   isSaving: false,
-  importJson: (inputFile: any) => {
-    inputFile?.current?.click();
-  },
+
   projectId: "2c28b91f-42af-4fc7-8d3a-57774c0ab3be",
   init: async () => {
     const { projectId, entries, namespaces } = get();
