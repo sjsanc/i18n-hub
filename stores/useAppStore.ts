@@ -10,6 +10,7 @@ export interface Entry {
   id: string;
   project_id: string;
   namespace_id: string;
+  last_edit_by: string;
   key: string;
   translations: Translation[];
   context: string;
@@ -21,13 +22,20 @@ export interface Namespace {
 }
 
 interface Store {
+  authorized: boolean | undefined;
+  setAuthorized: (authorized: boolean) => void;
+  dataLoaded: boolean;
+  setDataLoaded: (dataLoaded: boolean) => void;
+
   isSaving: boolean;
   projectId: string;
-  init: () => void;
+  init: () => Promise<boolean>;
+  search: string;
+  setSearch: (search: string) => void;
   entries: {
     allEntries: Entry[];
     currentEntry: Entry | undefined;
-    select: (entry: Entry) => void;
+    selectEntry: (entry: Entry | undefined) => void;
     setEntries: (allEntries: Entry[]) => void;
     create: () => void;
     delete: (id: string) => void;
@@ -36,7 +44,7 @@ interface Store {
   namespaces: {
     allNamespaces: Namespace[];
     currentNamespace: Namespace | undefined;
-    select: (namespace: Namespace) => void;
+    selectNamespace: (namespace: Namespace | undefined) => void;
     setNamespaces: (allNamespaces: Namespace[]) => void;
     create: () => void;
     delete: (id: string) => void;
@@ -56,6 +64,12 @@ interface Store {
 }
 
 export const useStore = create<Store>((set, get) => ({
+  authorized: undefined,
+  setAuthorized: (authorized: boolean) => set({ authorized }),
+
+  dataLoaded: false,
+  setDataLoaded: (dataLoaded: boolean) => set({ dataLoaded }),
+
   isSaving: false,
 
   projectId: "2c28b91f-42af-4fc7-8d3a-57774c0ab3be",
@@ -72,18 +86,24 @@ export const useStore = create<Store>((set, get) => ({
       .select("*")
       .eq("project_id", projectId);
 
-    if (_entries.error || _namespaces.error) console.log("error");
-    else {
+    if (_entries.error || _namespaces.error) {
+      console.error(_entries.error, _namespaces.error);
+      return false;
+    } else {
       const activeNs = _namespaces.data?.[0];
       const activeEntry = _entries.data?.find(
         (e) => e.namespace_id === activeNs?.id
       );
       entries.setEntries(_entries.data);
       namespaces.setNamespaces(_namespaces.data);
-      namespaces.select(activeNs ?? undefined);
-      entries.select(activeEntry ?? undefined);
+      namespaces.selectNamespace(activeNs ?? undefined);
+      entries.selectEntry(activeEntry ?? undefined);
+      return true;
     }
   },
+
+  search: "",
+  setSearch: (search: string) => set({ search }),
 
   modal: {
     key: undefined,
@@ -94,7 +114,7 @@ export const useStore = create<Store>((set, get) => ({
   entries: {
     allEntries: [],
     currentEntry: undefined,
-    select: (currentEntry) => {
+    selectEntry: (currentEntry) => {
       set({ entries: { ...get().entries, currentEntry } });
     },
     setEntries: (allEntries) =>
@@ -150,12 +170,13 @@ export const useStore = create<Store>((set, get) => ({
         .eq("id", entries.currentEntry?.id as string)
         .select("*")
         .then((res) => {
+          console.log(res);
           set({
             entries: {
               ...entries,
-              allEntries: entries.allEntries.map((e) =>
-                e.id === entries.currentEntry?.id ? res.data?.[0] : e
-              ),
+              // allEntries: entries.allEntries.map((e) =>
+              //   e.id === entries.currentEntry?.id ? res.data?.[0] : e
+              // ),
             },
           });
           set({ isSaving: false });
@@ -167,14 +188,14 @@ export const useStore = create<Store>((set, get) => ({
   namespaces: {
     currentNamespace: undefined,
     allNamespaces: [],
-    select: (currentNamespace) => {
+    selectNamespace: (currentNamespace) => {
       const { namespaces, entries } = get();
       set({
         namespaces: { ...namespaces, currentNamespace },
         entries: {
           ...entries,
           currentEntry: entries.allEntries.find(
-            (e) => e.namespace_id === currentNamespace.id
+            (e) => e.namespace_id === currentNamespace?.id
           ),
         },
       });

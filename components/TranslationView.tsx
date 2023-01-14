@@ -5,8 +5,9 @@ import {
   Select,
   Textarea,
 } from "@chakra-ui/react";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { debounce } from "lodash";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Translation, useStore } from "../stores/useAppStore";
 
@@ -18,8 +19,12 @@ interface FormType {
 }
 
 export default function TranslationView() {
+  const supabase = useSupabaseClient();
+  const session = useSession();
   const namespaces = useStore((state) => state.namespaces);
   const entries = useStore((state) => state.entries);
+
+  const [lastEditedBy, setLastEditBy] = useState<string>();
 
   const form = useForm<FormType>({
     defaultValues: {
@@ -49,22 +54,47 @@ export default function TranslationView() {
   useEffect(() => {
     const sub = form.watch((value, { name, type }) => {
       if (type === "change") {
-        console.log(entries.currentEntry);
-
         debouncedSave({
           key: value.key,
           context: value.context,
           namespace_id: value.namespace,
           translations: value.translations,
+          last_edit_by: session?.user.id,
         });
       }
     });
     return () => sub.unsubscribe();
   }, [form.watch]);
 
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", session?.user.id)
+      .then((r) => setLastEditBy(r?.data?.[0]?.email));
+  }, []);
+
   return entries.currentEntry ? (
     <>
-      <div className="bg-white p-4 border border-slate-200 flex flex-col gap-2 rounded mx-3 z-30 ">
+      <div className="mx-3 flex flex-col gap-2">
+        {translations.fields.map((tr, i) => (
+          <div
+            className="bg-white border border-slate-200 rounded p-3"
+            key={tr.id}
+          >
+            <h2 className="text-xs font-bold uppercase text-slate-500 mb-2">
+              {tr.lang}
+            </h2>
+            <Textarea
+              borderColor={"slate.200"}
+              bg={"white"}
+              focusBorderColor={"rose.500"}
+              {...form.register(`translations.${i}.val`)}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="bg-white p-4 border border-slate-200 flex flex-col gap-2 rounded m-3 z-30 mt-auto ">
         <div className="grid grid-cols-2 gap-2">
           <FormControl>
             <FormLabel>Key</FormLabel>
@@ -101,10 +131,16 @@ export default function TranslationView() {
           />
         </FormControl>
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2">
-            <div className="text-rose-500 font-bold text-sm">ID:</div>
-            <div className="bg-slate-50 text-slate-400 font-bold uppercase text-xs rounded px-1 ">
-              {entries.currentEntry?.id}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="text-rose-500 font-bold text-sm">ID:</div>
+              <div>{entries.currentEntry?.id}</div>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <div className="text-rose-500 font-bold text-sm">
+                Last Edited By:
+              </div>
+              <div>{lastEditedBy || "Unknown"}</div>
             </div>
           </div>
           <button
@@ -114,24 +150,6 @@ export default function TranslationView() {
             Delete Key
           </button>
         </div>
-      </div>
-      <div className="m-3 mt-auto flex flex-col gap-2">
-        {translations.fields.map((tr, i) => (
-          <div
-            className="bg-white border border-slate-200 rounded p-3"
-            key={tr.id}
-          >
-            <h2 className="text-xs font-bold uppercase text-slate-500 mb-2">
-              {tr.lang}
-            </h2>
-            <Textarea
-              borderColor={"slate.200"}
-              bg={"white"}
-              focusBorderColor={"rose.500"}
-              {...form.register(`translations.${i}.val`)}
-            />
-          </div>
-        ))}
       </div>
     </>
   ) : null;
